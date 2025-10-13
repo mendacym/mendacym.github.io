@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mendacym - Proxy</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for the gold/silver aesthetic and layout */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+
+        /* Very dark slate/black background */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d0e12; 
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Define button styles using the gold gradient */
+        .gold-button {
+            transition: all 0.2s ease-in-out;
+            background-image: linear-gradient(145deg, #FFD700 0%, #daa520 100%);
+            color: #1f2937; /* Dark text for readability on gold */
+            border: 2px solid #C0C0C0; /* Silver border */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+            font-weight: 700;
+        }
+
+        .gold-button:hover {
+            background-image: linear-gradient(145deg, #ffc400 0%, #b8860b 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 10px -1px rgba(0, 0, 0, 0.6);
+        }
+
+        /* Input field styling */
+        .silver-input {
+            background-color: #1f2937; /* Dark input background */
+            color: #C0C0C0; /* Silver text */
+            border: 1px solid #C0C0C0; /* Silver border */
+            transition: border-color 0.2s;
+        }
+
+        .silver-input:focus {
+            border-color: #FFD700; /* Gold focus ring */
+            box-shadow: 0 0 0 1px #FFD700;
+        }
+
+        /* Calculate the height for the iframe and main content area dynamically */
+        #header {
+            height: 64px; /* fixed height for header */
+        }
+        #content-wrapper {
+            /* Full height minus the header height */
+            height: calc(100vh - 64px);
+            display: flex;
+            flex-direction: column;
+        }
+        #proxy-iframe {
+            flex-grow: 1; /* Make iframe take up remaining space */
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Header (Fixed at top) -->
+    <header id="header" class="bg-gray-900 border-b border-gray-700/50 flex items-center justify-between px-4 sticky top-0 z-10">
+        <div class="flex items-center space-x-3">
+            <!-- Logo/Favicon -->
+            <img 
+                src="https://mendacym.github.io/logo.png" 
+                alt="Mendacym Logo" 
+                class="w-10 h-10 rounded-full object-cover border border-gray-500"
+                onerror="this.onerror=null;this.src='https://placehold.co/40x40/1f2937/ffd700?text=M'; this.style.border='1px solid #FFD700';"
+            >
+            <!-- Title -->
+            <span class="text-xl font-extrabold tracking-wider text-gray-200">
+                Mendacym
+            </span>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <div id="content-wrapper">
+        
+        <!-- Proxy Control Panel -->
+        <div id="control-panel" class="p-4 bg-gray-800 border-b border-gray-700 transition-all duration-300">
+            <!-- Warning Message -->
+            <div id="warning-message" class="mb-4 p-3 rounded-lg bg-yellow-900/40 border border-yellow-500/50 text-yellow-300 text-sm md:text-base shadow-lg">
+                <span class="font-bold text-yellow-100">Warning:</span> Since this page piggybacks off of Richet's Cosina Proxy, quality may be low. We are working on fixing this!
+            </div>
+            
+            <!-- URL Input Form -->
+            <form id="proxy-form" class="flex flex-col md:flex-row gap-3">
+                <input 
+                    type="text" 
+                    id="url-input" 
+                    placeholder="Enter URL (e.g., google.com or https://google.com)" 
+                    required 
+                    class="silver-input flex-grow p-3 rounded-lg focus:outline-none"
+                >
+                <button 
+                    type="submit" 
+                    class="gold-button flex-shrink-0 w-full md:w-auto py-3 px-6 rounded-lg uppercase"
+                >
+                    Load Proxy
+                </button>
+            </form>
+        </div>
+
+        <!-- Iframe for the Proxy Content -->
+        <!-- Starts hidden and shows a loading message -->
+        <div id="iframe-container" class="relative flex-grow flex items-center justify-center bg-gray-900">
+            <p id="initial-message" class="text-gray-500 text-lg p-4">Enter a URL above and click "Load Proxy" to begin.</p>
+            <iframe 
+                id="proxy-iframe" 
+                name="proxy-iframe"
+                src="" 
+                class="w-full h-full border-none hidden" 
+                onload="document.getElementById('loading-indicator').classList.add('hidden'); this.classList.remove('hidden');"
+                onerror="document.getElementById('loading-indicator').classList.add('hidden'); console.error('Failed to load the URL in the iframe.'); /* Changed from alert() */"
+            ></iframe>
+            <div id="loading-indicator" class="hidden text-xl text-gray-400 p-4">
+                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-yellow-400 inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Loading Content...
+            </div>
+        </div>
+        
+    </div>
+
+    <script>
+        const proxyForm = document.getElementById('proxy-form');
+        const urlInput = document.getElementById('url-input');
+        const proxyIframe = document.getElementById('proxy-iframe');
+        const initialMessage = document.getElementById('initial-message');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        
+        // Base proxy URL
+        const PROXY_BASE_URL = 'https://cosina.deno.dev/proxy?url=';
+
+        /**
+         * Normalizes the user input URL to ensure a protocol (http:// or https://) is present.
+         * Defaults to https:// if no protocol is found, but respects http:// if provided.
+         * @param {string} url - The raw URL input.
+         * @returns {string} The normalized URL.
+         */
+        function cleanUrl(url) {
+            let cleaned = url.trim();
+            // Check if a protocol (http:// or https://) is already present
+            if (!cleaned.startsWith('http://') && !cleaned.startsWith('https://')) {
+                // If no protocol, default to HTTPS
+                return 'https://' + cleaned;
+            }
+            // If a protocol is present (even http://), use it as is.
+            return cleaned;
+        }
+
+        /**
+         * Handles the form submission to load the proxy content.
+         */
+        proxyForm.addEventListener('submit', function(e) {
+            e.preventDefault(); // Stop the default form submission
+            
+            const rawUrl = urlInput.value;
+            if (!rawUrl) return;
+
+            // 1. Normalize the URL based on the user's input
+            const targetUrl = cleanUrl(rawUrl);
+            
+            // 2. Construct the final proxy URL, encoding the target URL
+            const finalProxyUrl = PROXY_BASE_URL + encodeURIComponent(targetUrl);
+
+            // 3. Update UI state
+            initialMessage.classList.add('hidden');
+            proxyIframe.classList.add('hidden'); // Hide iframe temporarily
+            loadingIndicator.classList.remove('hidden'); // Show loading indicator
+
+            // 4. Set the iframe source
+            proxyIframe.src = finalProxyUrl;
+
+            // Removed the line that overwrites urlInput.value to preserve user input structure.
+        });
+
+    </script>
