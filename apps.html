@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mendacym - Tools</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for the gold/silver aesthetic and layout */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+
+        /* Very dark slate/black background */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d0e12; 
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Define button styles using the gold gradient and silver border */
+        .tool-button {
+            transition: all 0.2s ease-in-out;
+            background-color: #262c35; /* Dark background */
+            color: #C0C0C0; /* Silver text */
+            border: 2px solid #C0C0C0; /* Silver border */
+            border-radius: 0.5rem; /* Rounded corners */
+            padding: 1rem;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .tool-button:hover {
+            /* Hover effect: Subtle gold glow/gradient */
+            background-image: linear-gradient(145deg, #1f2937 0%, #0d0e12 100%);
+            border-color: #FFD700; /* Gold border on hover */
+            color: #FFD700; /* Gold text on hover */
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(255, 215, 0, 0.2);
+        }
+        
+        /* Input field styling */
+        .silver-input {
+            background-color: #1f2937; /* Dark input background */
+            color: #C0C0C0; /* Silver text */
+            border: 1px solid #C0C0C0; /* Silver border */
+            transition: border-color 0.2s;
+        }
+
+        .silver-input:focus {
+            border-color: #FFD700; /* Gold focus ring */
+            box-shadow: 0 0 0 1px #FFD700;
+            outline: none;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Header (Fixed at top) -->
+    <header id="header" class="bg-gray-900 border-b border-gray-700/50 flex items-center justify-start px-4 h-16 sticky top-0 z-10">
+        <a href="/" class="flex items-center space-x-3">
+            <!-- Logo/Favicon -->
+            <img 
+                src="https://mendacym.github.io/logo.png" 
+                alt="Mendacym Logo" 
+                class="w-10 h-10 rounded-full object-cover border border-gray-500"
+                onerror="this.onerror=null;this.src='https://placehold.co/40x40/1f2937/ffd700?text=M'; this.style.border='1px solid #FFD700';"
+            >
+            <!-- Title -->
+            <span class="text-xl font-extrabold tracking-wider text-gray-200">
+                Mendacym
+            </span>
+        </a>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="container mx-auto p-4 md:p-8 flex flex-col items-center">
+        
+        <h1 class="text-4xl md:text-5xl font-extrabold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-600 tracking-tighter">
+            Utilities & Applications
+        </h1>
+
+        <!-- Search Bar -->
+        <div class="w-full max-w-2xl mb-8">
+            <input 
+                type="text" 
+                id="search-input" 
+                placeholder="Search tools or apps by name..." 
+                class="silver-input w-full p-4 rounded-lg text-lg"
+                oninput="filterTools()"
+            >
+        </div>
+
+        <!-- Tools Container (Grid Layout) -->
+        <div id="tools-container" class="w-full max-w-4xl grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            <!-- Tool buttons will be injected here by JavaScript -->
+        </div>
+
+        <!-- Status/Error Message Area -->
+        <div id="status-message" class="mt-8 text-gray-500">
+            <!-- Initial status text -->
+        </div>
+
+    </main>
+
+    <script>
+        // --- Tool Data Embedded Here ---
+        const ALL_TOOLS = [
+            // --- Utility Tools ---
+            { name: "Website Proxy", link: "/search.html" },
+            { name: "Encryption Helper", link: "/tools/encrypt.html" },
+            { name: "Code Minifier", link: "/tools/minify.html" },
+            { name: "Base64 Encoder/Decoder", link: "/tools/base64.html" },
+            { name: "URL Shortener", link: "/tools/url-shortener.html" },
+            { name: "Color Picker", link: "/tools/color-picker.html" },
+            
+            // --- Apps & Other ---
+            { name: "Simple Calculator App", link: "/apps/calculator.html" },
+            { name: "Markdown Editor", link: "/apps/editor.html" },
+            { name: "Task/Todo List", link: "/apps/todo.html" },
+            { name: "Custom Timer", link: "/apps/timer.html" },
+            // ADD NEW TOOLS HERE: { name: "New Tool Name", link: "/path/to/tool.html" }
+        ];
+        // -------------------------------
+        
+        const toolsContainer = document.getElementById('tools-container');
+        const searchInput = document.getElementById('search-input');
+        const statusMessage = document.getElementById('status-message');
+        
+        /**
+         * Renders the tool buttons based on the provided list.
+         * @param {Array<Object>} tools - The list of tool objects to render.
+         */
+        function renderTools(tools) {
+            toolsContainer.innerHTML = ''; // Clear existing buttons
+            statusMessage.innerHTML = '';
+            
+            if (tools.length === 0) {
+                statusMessage.textContent = 'No tools found matching your search.';
+                return;
+            }
+
+            tools.forEach(tool => {
+                const button = document.createElement('button');
+                button.textContent = tool.name;
+                button.className = 'tool-button';
+                button.onclick = () => {
+                    // Navigate to the tool link
+                    window.location.href = tool.link;
+                };
+                toolsContainer.appendChild(button);
+            });
+        }
+
+        /**
+         * Filters the tools based on the current search input value.
+         */
+        function filterTools() {
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            
+            // If the search term is empty, show all tools
+            if (searchTerm === '') {
+                renderTools(ALL_TOOLS);
+                return;
+            }
+
+            // Filter the tools whose names include the search term
+            const filteredTools = ALL_TOOLS.filter(tool => 
+                tool.name.toLowerCase().includes(searchTerm)
+            );
+
+            renderTools(filteredTools);
+        }
+
+        // Initialize the page by rendering all tools on load
+        document.addEventListener('DOMContentLoaded', () => {
+            if (ALL_TOOLS.length > 0) {
+                renderTools(ALL_TOOLS);
+            } else {
+                statusMessage.textContent = 'No tools have been added yet.';
+            }
+        });
+
+    </script>
+</body>
+</html>
