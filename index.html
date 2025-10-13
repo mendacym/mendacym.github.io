@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mendacym - Home</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for the gold/silver aesthetic */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+
+        /* Dark background for modern contrast */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d0e12; /* Very dark slate/black */
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Gold button styles */
+        .gold-button {
+            transition: all 0.2s ease-in-out;
+            /* Gold background with a subtle gradient */
+            background-image: linear-gradient(145deg, #FFD700 0%, #daa520 100%);
+            /* Silver text for contrast */
+            color: #1f2937; /* Dark text for readability on gold */
+            /* Silver border/outline */
+            border: 2px solid #C0C0C0;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.5);
+            font-weight: 700;
+        }
+
+        .gold-button:hover {
+            /* Darker gold on hover */
+            background-image: linear-gradient(145deg, #ffc400 0%, #b8860b 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 10px -1px rgba(0, 0, 0, 0.6), 0 4px 6px -2px rgba(0, 0, 0, 0.6);
+        }
+        
+        /* Logo Container Styling for glowing effect */
+        .logo-container {
+            position: relative;
+            padding: 0.5rem;
+            border-radius: 9999px; /* Full circle */
+            box-shadow: 0 0 40px rgba(255, 215, 0, 0.4); /* Subtle gold glow */
+        }
+    </style>
+</head>
+<body class="p-4">
+
+    <!-- Main Content Wrapper -->
+    <div class="max-w-md w-full mx-auto text-center py-12">
+        
+        <!-- Logo Section -->
+        <div class="logo-container mx-auto mb-10 w-48 h-48 sm:w-60 sm:h-60">
+            <img 
+                id="mendacym-logo"
+                src="https://mendacym.github.io/logo.png" 
+                alt="Mendacym Logo" 
+                class="w-full h-full object-cover rounded-full border-4 border-gray-300 shadow-2xl transition duration-500 ease-in-out transform hover:scale-105"
+                onerror="this.onerror=null;this.src='https://placehold.co/240x240/1f2937/ffd700?text=M+Logo'; this.style.border='4px solid #FFD700';"
+            >
+        </div>
+        
+        <h1 class="text-4xl sm:text-5xl font-extrabold mb-8 text-gray-100 tracking-wider">
+            MENDACYM
+        </h1>
+
+        <!-- Buttons Section -->
+        <div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-6">
+            
+            <!-- Proxy Button -->
+            <a href="/search.html" class="gold-button w-full sm:w-40 py-3 px-6 rounded-lg uppercase">
+                Proxy
+            </a>
+
+            <!-- Games Button -->
+            <a href="/play.html" class="gold-button w-full sm:w-40 py-3 px-6 rounded-lg uppercase">
+                Games
+            </a>
+
+        </div>
+
+    </div>
+    
+</body>
+</html>
