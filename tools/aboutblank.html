@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mendacym - About:Blank Cloaker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d0e12; 
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .silver-input {
+            background-color: #1f2937;
+            color: #C0C0C0;
+            border: 1px solid #C0C0C0;
+            transition: border-color 0.2s;
+        }
+
+        .silver-input:focus {
+            border-color: #FFD700;
+            box-shadow: 0 0 0 1px #FFD700;
+            outline: none;
+        }
+
+        .gold-button {
+            background-image: linear-gradient(to right, #FFD700, #DAA520);
+            color: #1f2937;
+            font-weight: bold;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            transition: transform 0.1s;
+        }
+
+        .gold-button:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+        }
+    </style>
+</head>
+<body>
+
+    <header id="header" class="bg-gray-900 border-b border-gray-700/50 flex items-center justify-start px-4 h-16 sticky top-0 z-10">
+        <a href="/" class="flex items-center space-x-3">
+            <img 
+                src="https://mendacym.github.io/logo.png" 
+                alt="Mendacym Logo" 
+                class="w-10 h-10 rounded-full object-cover border border-gray-500"
+                onerror="this.onerror=null;this.src='https://placehold.co/40x40/1f2937/ffd700?text=M'; this.style.border='1px solid #FFD700';"
+            >
+            <span class="text-xl font-extrabold tracking-wider text-gray-200">
+                Mendacym
+            </span>
+        </a>
+    </header>
+
+    <main class="container mx-auto p-4 md:p-8 flex flex-col items-center">
+        
+        <h1 class="text-4xl md:text-5xl font-extrabold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-600 tracking-tighter">
+            About:Blank Cloaker
+        </h1>
+        <p class="text-gray-400 max-w-xl text-center mb-10">Opens the specified URL in a new tab with an obfuscated **about:blank** URL and a custom title/favicon.</p>
+
+        <div class="w-full max-w-2xl border border-gray-700/50 p-6 rounded-xl bg-[#14161a] shadow-2xl">
+            <div class="space-y-4">
+                <div>
+                    <label for="cloaker-url" class="block text-gray-400 mb-2">Target URL (e.g., https://youtube.com)</label>
+                    <input 
+                        type="url" 
+                        id="cloaker-url" 
+                        class="silver-input w-full p-3 rounded-lg"
+                        placeholder="Enter URL to cloak (required)"
+                    >
+                </div>
+                <div>
+                    <label for="cloaker-title" class="block text-gray-400 mb-2">New Tab Title (e.g., Google Drive)</label>
+                    <input 
+                        type="text" 
+                        id="cloaker-title" 
+                        class="silver-input w-full p-3 rounded-lg"
+                        placeholder="Enter desired tab title"
+                    >
+                </div>
+                <div>
+                    <label for="cloaker-favicon" class="block text-gray-400 mb-2">Favicon Link (e.g., https://google.com/favicon.ico)</label>
+                    <input 
+                        type="url" 
+                        id="cloaker-favicon" 
+                        class="silver-input w-full p-3 rounded-lg"
+                        placeholder="Enter public link to a favicon (.ico or .png)"
+                    >
+                </div>
+                <div class="pt-6 flex justify-center">
+                    <button 
+                        id="cloak-button"
+                        onclick="cloakIt()" 
+                        class="gold-button">
+                        Launch Cloaked Tab
+                    </button>
+                </div>
+                <p id="cloaker-message" class="text-center text-sm text-red-400 mt-4"></p>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        const cloakerMessage = document.getElementById('cloaker-message');
+        
+        function cloakIt() {
+            cloakerMessage.textContent = '';
+            const targetUrl = document.getElementById('cloaker-url').value.trim();
+            const tabTitle = document.getElementById('cloaker-title').value.trim() || "Page Loaded";
+            const faviconUrl = document.getElementById('cloaker-favicon').value.trim();
+
+            if (!targetUrl) {
+                cloakerMessage.textContent = 'Error: Target URL cannot be empty.';
+                return;
+            }
+
+            const safeUrl = targetUrl.match(/^https?:\/\//i) ? targetUrl : 'https://' + targetUrl;
+
+            const cloakedWindow = window.open('about:blank', '_blank');
+
+            if (!cloakedWindow) {
+                cloakerMessage.textContent = 'Error: Popup blocked. Please allow popups for this site.';
+                return;
+            }
+
+            const htmlContent = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>${tabTitle}</title>
+                    <link rel="icon" type="image/x-icon" href="${faviconUrl}">
+                    <style>
+                        body, html { margin: 0; padding: 0; overflow: hidden; height: 100%; width: 100%; }
+                        iframe { border: none; width: 100%; height: 100%; }
+                    </style>
+                </head>
+                <body>
+                    <iframe src="${safeUrl}" allowfullscreen></iframe>
+                </body>
+                </html>
+            `;
+
+            cloakedWindow.document.write(htmlContent);
+            cloakedWindow.document.close();
+        }
+    </script>
+</body>
+</html>
