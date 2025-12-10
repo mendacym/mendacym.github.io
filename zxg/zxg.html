@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>History_Assignment_Final.docx - Word</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Courier New', Courier, monospace; }
+        
+        /* Canvas is fixed at the bottom */
+        #canvas-container { 
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
+            z-index: 0; transition: opacity 0.1s; 
+        }
+        
+        /* --- GAMING UI --- */
+        #ui {
+            position: absolute; top: 20px; left: 20px; color: #0ff;
+            text-shadow: 0 0 5px #0ff; pointer-events: none; z-index: 20;
+            transition: opacity 0.3s;
+        }
+        h1 { margin: 0; font-size: 32px; text-transform: uppercase; letter-spacing: 4px; font-weight: 800; color: #fff; text-shadow: 2px 2px #f0f; }
+        #score { font-size: 24px; color: #fff; margin-bottom: 0px; font-weight: bold; }
+        #high-score { font-size: 16px; color: #aaa; margin-bottom: 15px; letter-spacing: 1px; }
+        
+        .bar-container {
+            width: 220px; height: 18px; border: 2px solid #fff; background: rgba(0,0,0,0.5);
+            margin-bottom: 8px; position: relative; transform: skewX(-15deg);
+        }
+        #health-bar, #boost-bar { width: 100%; height: 100%; transition: width 0.2s, background 0.2s; }
+        #health-bar { background: #0f0; box-shadow: 0 0 10px #0f0; }
+        #boost-bar { background: #0ff; box-shadow: 0 0 10px #0ff; transition: width 0.1s linear; }
+        .bar-text {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            text-align: center; font-size: 12px; line-height: 18px;
+            color: #fff; font-weight: 900; text-shadow: 1px 1px 2px #000;
+            transform: skewX(15deg);
+        }
+        #controls-hint { font-size: 14px; color: #ffff00; margin-top: 15px; }
+        .boost-hint { color: #0ff; animation: pulse 0.5s infinite; font-weight: bold; }
+
+        /* --- WORK MODE UI --- */
+        #word-ui {
+            display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: transparent; 
+            font-family: 'Segoe UI', Calibri, Arial, sans-serif;
+            z-index: 100; 
+            pointer-events: auto; 
+        }
+        
+        #word-ribbon-container {
+            width: 100%; height: 140px; background: #fff; border-bottom: 1px solid #ccc;
+            display: flex; flex-direction: column; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        #word-title-bar {
+            width: 100%; height: 30px; background: #2b579a; color: white;
+            display: flex; align-items: center; justify-content: center; font-size: 12px;
+        }
+        
+        #word-tabs {
+            display: flex; background: #2b579a; color: #ddd; padding-left: 10px; height: 25px; align-items: flex-end;
+        }
+        .word-tab { 
+            padding: 5px 15px; cursor: pointer; font-size: 11px; text-transform: uppercase; 
+            color: #fff; border: 1px solid transparent; margin-right: 2px;
+        }
+        .word-tab.active { background: #f3f3f3; color: #2b579a; border: 1px solid #ccc; border-bottom: 1px solid #f3f3f3; }
+        .word-tab:hover:not(.active) { background: rgba(255,255,255,0.2); }
+        
+        #word-ribbon {
+            width: 100%; height: 100px; background: #f3f3f3; border-bottom: 1px solid #ccc;
+            display: flex; align-items: center; padding: 5px 10px; gap: 5px; box-sizing: border-box;
+        }
+        
+        .ribbon-group {
+            display: flex; flex-direction: column; height: 100%; padding: 0 5px;
+            border-right: 1px solid #d0d0d0; align-items: center; justify-content: space-between;
+        }
+        .ribbon-group:last-child { border-right: none; }
+        .group-label { font-size: 10px; color: #777; margin-top: 2px; margin-bottom: 2px; }
+        .ribbon-row { display: flex; gap: 2px; align-items: center; width: 100%; justify-content: center; margin-bottom: 2px; }
+        
+        .icon-btn {
+            border: 1px solid transparent; cursor: pointer; display: flex; align-items: center; justify-content: center;
+            font-size: 11px; color: #444; padding: 2px; min-width: 20px; border-radius: 2px;
+        }
+        .icon-btn:hover { background: #cde6f7; border-color: #92c0e0; }
+        .icon-btn:active { background: #92c0e0; }
+        .icon-btn.selected { background: #cde6f7; border-color: #92c0e0; }
+        
+        .icon-large { flex-direction: column; width: 40px; height: 50px; gap: 5px; }
+        .icon-large span { font-size: 18px; }
+        .icon-large div { font-size: 10px; }
+
+        .dropdown {
+            border: 1px solid #ccc; background: #fff; padding: 1px 4px; font-size: 11px; height: 18px; display: flex; align-items: center; justify-content: space-between; cursor: pointer;
+        }
+        .dropdown:hover { border-color: #92c0e0; }
+        
+        /* Native Select styling to look like Word Dropdown */
+        .word-select {
+            border: none; background: transparent; font-size: 11px; color: #333; outline: none; width: 100%; cursor: pointer;
+        }
+
+        #styles-gallery {
+            display: flex; gap: 5px; border: 1px solid #ccc; background: #fff; height: 56px; padding: 2px; overflow: hidden; width: 200px;
+        }
+        .style-box {
+            border: 1px solid transparent; padding: 5px; width: 60px; display: flex; flex-direction: column; align-items: center; cursor: pointer;
+        }
+        .style-box:hover { background: #cde6f7; border-color: #92c0e0; }
+        .style-preview { font-size: 16px; margin-bottom: 5px; }
+        .style-name { font-size: 9px; color: #666; }
+
+        /* --- THE TRICK: HOLE IN THE MASK --- */
+        #doc-viewport {
+            background: transparent; width: 100%; height: calc(100% - 155px); 
+            position: relative; overflow: hidden; display: flex; justify-content: center;
+        }
+        
+        #paper-sheet {
+            width: 816px; height: 100%; margin-top: 20px; position: relative; overflow: hidden; 
+            background: rgba(255, 255, 255, 0.02); 
+            box-shadow: 0 0 0 10000px #e6e6e6; 
+        }
+        
+        #doc-content {
+            width: 100%; height: 100%; background: transparent; 
+            padding: 70px; box-sizing: border-box;
+            font-family: 'Calibri', sans-serif; font-size: 11pt; line-height: 1.5; color: #000;
+            overflow-y: auto; outline: none; cursor: text; position: relative; z-index: 2;
+        }
+
+        /* Status Bar */
+        #status-bar {
+            width: 100%; height: 22px; background: #2b579a; color: #fff;
+            display: flex; align-items: center; padding: 0 10px; font-size: 11px; box-sizing: border-box;
+            position: absolute; bottom: 0; z-index: 101; justify-content: space-between;
+        }
+        .status-item { margin-right: 20px; cursor: default; }
+        #status-paused { color: #fff; display: none; font-weight: bold;} 
+        #hidden-instructions { color: #aaccff; font-size: 9px; margin-left: 20px; opacity: 0.8; }
+
+        /* --- SPELLCHECK CRASH SCREEN --- */
+        #work-game-over {
+            position: absolute; top: 40%; right: 100px; 
+            width: 300px; background: #fff; border: 1px solid #ccc;
+            box-shadow: 2px 2px 10px rgba(0,0,0,0.2);
+            font-family: 'Segoe UI', sans-serif; z-index: 200;
+            display: none; flex-direction: column;
+        }
+        .sc-header {
+            background: #fff; padding: 8px 12px; font-size: 11px; font-weight: bold; color: #333;
+            border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between;
+        }
+        .sc-body { padding: 15px; background: #f8f8f8; font-size: 11px; }
+        .sc-title { color: #666; margin-bottom: 5px; }
+        .sc-word { color: #e51400; font-weight: bold; font-size: 14px; margin-bottom: 10px; }
+        .sc-box { background: #fff; border: 1px solid #ccc; height: 80px; padding: 5px; margin-bottom: 10px; overflow-y: auto; }
+        .sc-option { padding: 2px 5px; cursor: pointer; }
+        .sc-option:hover { background: #cde6f7; }
+        .sc-buttons { display: flex; gap: 5px; justify-content: flex-end; }
+        .sc-btn { border: 1px solid #adadad; background: #e1e1e1; padding: 3px 10px; cursor: pointer; min-width: 60px; }
+        .sc-btn:hover { background: #e5f1fb; border-color: #0078d7; }
+        
+        /* --- HELP MODAL --- */
+        #help-modal {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 500px; background: #fff; border: 1px solid #2b579a;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5); z-index: 300; display: none;
+            font-family: 'Segoe UI', sans-serif; color: #333;
+        }
+        .help-header { background: #2b579a; color: #fff; padding: 10px; display: flex; justify-content: space-between; font-weight: bold; }
+        .close-help { cursor: pointer; font-weight: bold; }
+        .help-content { padding: 20px; font-size: 12px; line-height: 1.6; }
+        .help-content h3 { border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-top: 0; }
+        .help-content ul { padding-left: 20px; }
+        .help-content li { margin-bottom: 5px; }
+
+        /* --- GENERAL --- */
+        @keyframes pulse { 0% { opacity: 0.7; } 50% { opacity: 1; } 100% { opacity: 0.7; } }
+
+        #settings-panel {
+            position: absolute; top: 20px; right: 20px; width: 260px;
+            background: rgba(0, 5, 20, 0.9); border: 2px solid #0ff;
+            box-shadow: 0 0 15px #0ff, inset 0 0 20px rgba(0,255,255,0.2);
+            padding: 15px; color: #fff; z-index: 30;
+            pointer-events: auto; border-radius: 5px; transition: height 0.3s;
+        }
+        .panel-section { margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        .panel-label { 
+            font-size: 12px; color: #0ff; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; cursor: pointer;
+            display: flex; justify-content: space-between; user-select: none;
+        }
+        .toggle-icon { font-size: 10px; transition: transform 0.3s ease; }
+        .btn-group { display: flex; gap: 5px; flex-wrap: wrap; overflow: hidden; max-height: 100px; transition: max-height 0.3s ease-out, opacity 0.3s ease-out; opacity: 1; }
+        .panel-section.collapsed .btn-group { max-height: 0; opacity: 0; pointer-events: none; }
+        .setting-btn {
+            flex: 1; background: #111; border: 1px solid #444; color: #888; padding: 8px; font-size: 10px; cursor: pointer;
+            transition: all 0.2s; text-transform: uppercase; min-width: 50px;
+        }
+        .setting-btn:hover { background: #222; border-color: #fff; color: #fff; }
+        .setting-btn.active { background: #0ff; color: #000; border-color: #0ff; font-weight: bold; box-shadow: 0 0 10px #0ff; }
+
+        #debug-canvas, #crack-canvas { display: none; }
+
+        #game-over {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            text-align: center; color: #fff; display: none;
+            background: rgba(0, 0, 0, 0.95); padding: 50px; border: 3px solid #f0f;
+            box-shadow: 0 0 50px #f0f; z-index: 40; min-width: 400px;
+        }
+        #new-record-msg { color: #0f0; font-weight: bold; font-size: 18px; margin-top: 10px; display: none; animation: pulse 0.2s infinite; }
+        button.restart-btn {
+            background: #f0f; color: #fff; border: none; padding: 15px 40px;
+            font-size: 24px; cursor: pointer; margin-top: 30px;
+            font-family: inherit; font-weight: 900; text-transform: uppercase;
+            letter-spacing: 3px; box-shadow: 0 0 15px #f0f;
+        }
+        button.restart-btn:hover { background: #fff; color: #f0f; box-shadow: 0 0 30px #fff; }
+
+        #loading {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            color: #0ff; font-size: 24px; font-weight: bold; text-shadow: 0 0 10px #0ff;
+            animation: blink 0.5s infinite alternate; z-index: 50;
+        }
+        
+        #warning-overlay {
+            position: absolute; top: 20%; width: 100%; text-align: center;
+            color: #f00; font-size: 40px; font-weight: 900;
+            text-shadow: 0 0 20px #f00; display: none; pointer-events: none; z-index: 25;
+            animation: pulse 0.2s infinite;
+        }
+        
+        #damage-flash {
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: red; opacity: 0; pointer-events: none; z-index: 28; transition: opacity 0.1s;
+        }
+        
+        #pause-btn {
+            margin-top: 10px; background: #333; color: #0ff; border: 1px solid #0ff; 
+            padding: 5px 10px; cursor: pointer; font-weight: bold; width: 100%; text-transform: uppercase;
+        }
+        #pause-btn:hover { background: #0ff; color: #000; }
+        
+        .doc-title { font-size: 24pt; color: #2b579a; border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 15px; font-weight: normal; }
+        .doc-h1 { font-size: 16pt; color: #2b579a; margin-top: 15px; font-weight: normal; }
+        .doc-p { margin-bottom: 10pt; text-align: justify; }
+        .doc-list { margin-left: 20px; margin-bottom: 10pt; }
+        .doc-li { margin-bottom: 5pt; }
+        .color-bar { width: 16px; height: 3px; background: #000; margin-top: 12px; position:absolute; }
+    </style>
+</head>
+<body>
+
+<!-- --- WORK UI (The Fake Word Doc) --- -->
+<div id="word-ui" onclick="handleWorkClick(event)">
+    <div id="word-ribbon-container">
+        <div id="word-title-bar">
+            <span>History_Assignment_Final.docx - Word</span>
+        </div>
+        <div id="word-tabs">
+            <div class="word-tab">File</div>
+            <div class="word-tab active">Home</div>
+            <div class="word-tab">Insert</div>
+            <div class="word-tab">Design</div>
+            <div class="word-tab">Layout</div>
+            <div class="word-tab">References</div>
+            <div class="word-tab">Mailings</div>
+            <div class="word-tab">Review</div>
+            <div class="word-tab">View</div>
+            <div class="word-tab" onclick="showHelp()" style="background:#2b579a; color:#fff; font-weight:bold;">Help</div>
+            <div class="word-tab" onclick="exitWorkMode()" style="background:#e0e0e0; color:#000; margin-left:auto; border-radius:0;">EXIT MODE</div>
+        </div>
+        <div id="word-ribbon">
+            <div class="ribbon-group">
+                <div class="ribbon-row">
+                    <div class="icon-large icon-btn"><span>📋</span><div>Paste</div></div>
+                    <div style="display:flex; flex-direction:column; gap:2px;">
+                        <div class="icon-btn">✂️ Cut</div>
+                        <div class="icon-btn">📄 Copy</div>
+                        <div class="icon-btn">🖌️ Format</div>
+                    </div>
+                </div>
+                <div class="group-label">Clipboard</div>
+            </div>
+            
+            <div class="ribbon-group">
+                <div class="ribbon-row" style="gap:5px;">
+                    <div class="dropdown" style="width:100px;">Calibri (Body) <span>▼</span></div>
+                    <!-- Functional Font Size -->
+                    <div class="dropdown" style="width:40px;" title="Font Size">
+                        <input type="number" value="11" style="border:none; width:100%; outline:none; text-align:center;" onchange="formatDoc('fontSize', this.value)"> <span>▼</span>
+                    </div>
+                    <div class="icon-btn">A^</div>
+                    <div class="icon-btn">Aˇ</div>
+                    <div class="icon-btn">Aa</div>
+                </div>
+                <div class="ribbon-row" style="justify-content: flex-start;">
+                    <div class="icon-btn" onmousedown="event.preventDefault(); formatDoc('bold')"><b>B</b></div>
+                    <div class="icon-btn" onmousedown="event.preventDefault(); formatDoc('italic')"><i>I</i></div>
+                    <div class="icon-btn" onmousedown="event.preventDefault(); formatDoc('underline')"><u>U</u></div>
+                    <div class="icon-btn" onmousedown="event.preventDefault(); formatDoc('strikeThrough')" style="text-decoration: line-through;">abc</div>
+                    
+                    <!-- GAME VISIBILITY DROPDOWN -->
+                    <div class="dropdown" style="width:60px; margin-right:2px;" title="Game Visibility">
+                        <select class="word-select" id="visibility-select" onchange="updateVisibilityFromDropdown(this.value)" onmousedown="event.stopPropagation()">
+                            <option value="1.0">100%</option>
+                            <option value="0.6">60%</option>
+                            <option value="0.4">40%</option>
+                            <option value="0.2" selected>20%</option>
+                            <option value="0.1">10%</option>
+                            <option value="0.08">8%</option>
+                            <option value="0.05">5%</option>
+                            <option value="0.03">3%</option>
+                            <option value="0.02">2%</option>
+                            <option value="0.01">1%</option>
+                            <option value="0.0">0%</option>
+                        </select>
+                    </div>
+
+                    <!-- BALL VISIBILITY DROPDOWN -->
+                    <div class="dropdown" style="width:60px; margin-right:2px;" title="Ball Visibility">
+                        <select class="word-select" id="ball-visibility-select" onchange="updateBallOpacityFromDropdown(this.value)" onmousedown="event.stopPropagation()">
+                            <option value="1.0">100%</option>
+                            <option value="0.8">80%</option>
+                            <option value="0.6">60%</option>
+                            <option value="0.4">40%</option>
+                            <option value="0.2" selected>20%</option>
+                            <option value="0.1">10%</option>
+                            <option value="0.08">8%</option>
+                            <option value="0.05">5%</option>
+                            <option value="0.03">3%</option>
+                            <option value="0.02">2%</option>
+                            <option value="0.0">0%</option>
+                        </select>
+                    </div>
+
+                    <div class="icon-btn" style="position:relative; width:30px;" onmousedown="event.preventDefault(); cycleColor()" title="Ink Color">
+                        A
+                        <div class="color-bar" id="color-bar-indicator"></div>
+                    </div>
+                </div>
+                <div class="group-label">Font</div>
+            </div>
+            
+            <div class="ribbon-group">
+                <div class="ribbon-row">
+                    <div class="icon-btn" onmousedown="event.preventDefault(); formatDoc('insertUnorderedList')">• <span>▼</span></div>
+                    <div class="icon-btn" onmousedown="event.preventDefault(); formatDoc('insertOrderedList')">1. <span>▼</span></div>
+                    <div class="icon-btn">1.a.i <span>▼</span></div>
+                    <div class="icon-btn" onmousedown="event.preventDefault(); formatDoc('outdent')">⇤</div>
+                    <div class="icon-btn" onmousedown="event.preventDefault(); formatDoc('indent')">⇥</div>
+                    <div class="icon-btn">AZ↓</div>
+                    <div class="icon-btn">¶</div>
+                </div>
+                <div class="ribbon-row">
+                    <div class="icon-btn" onmousedown="event.preventDefault(); formatDoc('justifyLeft')">≡</div>
+                    <div class="icon-btn" onmousedown="event.preventDefault(); formatDoc('justifyCenter')">◚</div>
+                    <div class="icon-btn" onmousedown="event.preventDefault(); formatDoc('justifyRight')">◛</div>
+                    <div class="icon-btn" onmousedown="event.preventDefault(); formatDoc('justifyFull')">☰</div>
+                    <div class="icon-btn">↕ <span>▼</span></div>
+                    <div class="icon-btn">paint <span>▼</span></div>
+                    <div class="icon-btn">田 <span>▼</span></div>
+                </div>
+                <div class="group-label">Paragraph</div>
+            </div>
+            
+            <div class="ribbon-group">
+                <div id="styles-gallery">
+                    <div class="style-box selected"><div class="style-preview">AaBbCc</div><div class="style-name">Normal</div></div>
+                    <div class="style-box"><div class="style-preview">AaBbCc</div><div class="style-name">No Spacing</div></div>
+                    <div class="style-box"><div class="style-preview" style="color:#2b579a; font-size:18px;">AaBbCc</div><div class="style-name">Heading 1</div></div>
+                </div>
+                <div class="group-label">Styles</div>
+            </div>
+            
+            <div class="ribbon-group">
+                <div class="icon-btn" style="width:60px; justify-content: flex-start;">🔍 Find</div>
+                <div class="icon-btn" style="width:60px; justify-content: flex-start;">abac Replace</div>
+                <div class="icon-btn" style="width:60px; justify-content: flex-start;">Select</div>
+                <div class="group-label">Editing</div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="doc-viewport">
+        <div id="paper-sheet">
+            <div id="doc-content" contenteditable="true" spellcheck="false"></div>
+        </div>
+    </div>
+    
+    <div id="status-bar">
+        <div style="display:flex; gap:15px;">
+            <span class="status-item">Page 1 of 1</span>
+            <span class="status-item" id="status-word-count">0 words</span>
+            <span class="status-item">📕</span>
+            <span class="status-item" id="status-paused">Syncing Paused</span>
+        </div>
+        <div style="display:flex; gap:15px; align-items:center;">
+            <span id="hidden-instructions">Controls: Arrows | Boost: Space | Panic: 0-9</span>
+            <span class="status-item">Focus</span>
+            <span class="status-item">English (United States)</span>
+            <span class="status-item">− ——|—— + 100%</span>
+        </div>
+    </div>
+    
+    <!-- SPELLCHECK CRASH SCREEN -->
+    <div id="work-game-over" onclick="resetGame()">
+        <div class="sc-header"><span>Spelling</span><span>X</span></div>
+        <div class="sc-body">
+            <div class="sc-title">Not in Dictionary:</div>
+            <div class="sc-word" id="sc-reason">Collision_Detected</div>
+            <div class="sc-label">Suggestions:</div>
+            <div class="sc-box">
+                <div class="sc-option"><strong>Recover_Data</strong></div>
+                <div class="sc-option">Restart_Process</div>
+                <div class="sc-option">Ignore_Error</div>
+            </div>
+            <div class="sc-buttons">
+                <button class="sc-btn">Ignore</button>
+                <button class="sc-btn">Change</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- HELP MODAL -->
+    <div id="help-modal" onclick="event.stopPropagation()">
+        <div class="help-header">Microsoft Word Help <span class="close-help" onclick="closeHelp()">X</span></div>
+        <div class="help-content">
+            <h3>Productivity Booster Add-in Guide</h3>
+            <p><strong>1. Stealth Operation:</strong> This document acts as a camouflage layer. The simulation runs on the paper surface.</p>
+            <p><strong>2. Visibility Control:</strong> 
+            <br> - Use the first dropdown (Game Visibility) to adjust terrain opacity (2% to 100%).
+            <br> - Use the second dropdown (Ball Visibility) to adjust only the player sphere opacity.
+            <br> - Use the <em>Font Color</em> button (Red A) to change wireframe ink color.</p>
+            <p><strong>3. Quick Access:</strong> Press <strong>'H'</strong> in any game mode to instantly switch to Work Mode.</p>
+            <p><strong>4. Focus Modes:</strong>
+            <ul>
+                <li><strong>Writing Mode:</strong> Click anywhere on the paper/text. The simulation pauses and hides. You can type normally.</li>
+                <li><strong>Simulation Mode:</strong> Click the grey background outside the paper. The simulation resumes control.</li>
+            </ul>
+            </p>
+            <p><strong>5. Metrics Translation:</strong>
+            <br> - <em>Word Count</em> = Current Score
+            <br> - <em>Page Integrity</em> = Shield Health
+            <br> - <em>Zoom Level</em> = Boost Energy
+            </p>
+            <p><strong>6. Emergency Protocols:</strong>
+            <br> - <strong>Panic Button:</strong> Press 0-9 to instantly hide the simulation layer completely.
+            <br> - <strong>Exit:</strong> Click 'Exit Mode' tab to return to standard interface.
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- --- GAMING UI --- -->
+<div id="ui">
+    <h1>CHROME CANYON</h1>
+    <div id="score">SCORE: 000000</div>
+    <div id="high-score">HIGH SCORE: 000000</div>
+    <div class="bar-container">
+        <div id="health-bar"></div>
+        <div class="bar-text" id="health-text">SHIELD: 100%</div>and
+    </div>
+    <div class="bar-container" style="border-color: #0ff;">
+        <div id="boost-bar"></div>
+        <div class="bar-text" id="boost-text">NITRO: 100%</div>
+    </div>
+    <div id="controls-hint">ARROWS / WASD to Fly and HOLD SPACE TO BOOST<br> <span class="boost-hint">GAME BY b1994mail@gmail.com</span></div>
+    <button id="pause-btn" onclick="togglePause()">PAUSE (P)</button>
+</div>
+
+<div id="warning-overlay">!!! DANGER DETECTED !!!</div>
+<div id="damage-flash"></div>
+
+<div id="settings-panel">
+    <div class="panel-section">
+        <div class="panel-label" onclick="toggleSection(this)">
+            Atmosphere <span class="toggle-icon">▼</span>
+        </div>
+        <div class="btn-group">
+            <button class="setting-btn active" onclick="setEnvironment('retro', this)">RETRO</button>
+            <button class="setting-btn" onclick="setEnvironment('day', this)">DAY</button>
+            <button class="setting-btn" onclick="setEnvironment('cyber', this)">CYBER</button>
+            <button class="setting-btn" onclick="setEnvironment('glass', this)">GLASS</button>
+            <button class="setting-btn" style="background:#fff; color:#000;" onclick="setEnvironment('work', this)">WORK</button>
+        </div>
+    </div>
+    <div class="panel-section">
+        <div class="panel-label" onclick="toggleSection(this)">
+            Terrain Gen <span class="toggle-icon">▼</span>
+        </div>
+        <div class="btn-group">
+            <button class="setting-btn" onclick="setLandscape('smooth', this)">SMOOTH</button>
+            <button class="setting-btn active" onclick="setLandscape('jagged', this)">JAGGED</button>
+        </div>
+    </div>
+    <button class="setting-btn" style="width:100%; margin-top:10px; padding:10px; background:#222; border:1px solid #f0f; color:#f0f;" onclick="resetGame()">SYSTEM REBOOT</button>
+</div>
+
+<canvas id="debug-canvas" width="256" height="256"></canvas>
+<canvas id="crack-canvas" width="512" height="512"></canvas>
+
+<div id="loading">INITIALIZING GRID...</div>
+
+<div id="game-over">
+    <h2 style="color:#f0f; text-shadow: 0 0 10px #f0f; font-size: 40px; margin: 0;">SIGNAL LOST</h2>
+    <p id="crash-reason" style="color:#0ff; font-size: 16px; margin-top: 10px; text-transform: uppercase;">IMPACT DETECTED</p>
+    <div id="new-record-msg">NEW RECORD ESTABLISHED!</div>
+    <p id="final-score" style="font-size: 24px; margin-top: 20px; color:#fff;">SCORE: 0</p>
+    <p style="color:#888; margin-top:20px; font-size: 12px;">PRESS ANY KEY TO RESTART</p>
+    <button class="restart-btn" onclick="resetGame()">RETRY</button>
+</div>
+
+<div id="canvas-container"></div>
+
+<!-- Three.js CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<script>
+    /**
+     * CHROME CANYON: STEALTH WORK MODE 13.0
+     * - Ball Opacity Slider
+     * - H Key Shortcut
+     * - Updated Manual
+     */
+
+    // --- Configuration ---
+    const CONFIG = {
+        baseSpeed: 0.8, maxSpeed: 3.5, speedIncrease: 0.0006,
+        boostAcceleration: 0.02, boostDeceleration: 0.3, maxBoostFactor: 5.0, boostDrain: 0.5, boostRecharge: 0.2,
+        terrainWidth: 200, terrainDepth: 400, terrainSegmentsW: 80, terrainSegmentsD: 160, maxHeight: 70,
+        playerSpeed: 1.3, maxLean: 0.6, noiseScale: 30, canyonPower: 3.0, homingStrength: 0.05,
+        mineStart: 10000, splitterStart: 20000, megaMineStart: 30000, blastRadius: 25
+    };
+
+    const REPORT_TOPICS = [
+        {
+            title: "The Homestead Act of 1862: Agrarian Policy and Westward Expansion",
+            summary: "The Homestead Act of 1862 stands as one of the most significant pieces of legislation in the history of the United States, fundamentally altering the demographic and economic landscape of the American West. Signed into law by President Abraham Lincoln during the height of the Civil War, the Act permitted any adult citizen, or intended citizen, who had never borne arms against the U.S. government to claim 160 acres of surveyed government land. The primary objective was to encourage the settlement of the western territories by individual family farmers, countering the spread of the plantation system favored by the Confederacy. By 1934, over 1.6 million homestead applications had been processed and more than 270 million acres—nearly 10% of the total area of the United States—had passed into private hands. However, the Act's implementation was fraught with challenges, including fraudulent speculation by timber and mining companies, harsh environmental conditions that made farming on 160 acres unfeasible in arid regions, and the catastrophic displacement of Native American populations whose treaty lands were often seized to make way for homesteaders.",
+            bullets: [
+                "<strong>Who:</strong> Enacted by the 37th United States Congress and signed by President Abraham Lincoln.",
+                "<strong>What:</strong> A federal law granting 160 acres of unappropriated public land to eligible claimants for a nominal filing fee.",
+                "<strong>Where:</strong> Primarily applicable to the vast territories west of the Mississippi River, including the Great Plains.",
+                "<strong>When:</strong> Signed into law on May 20, 1862, and remained active until the passage of the Federal Land Policy and Management Act of 1976.",
+                "<strong>Why:</strong> To accelerate western settlement, promote the Jeffersonian ideal of the yeoman farmer, and secure Union loyalty in the territories.",
+                "<strong>How:</strong> Claimants were required to file an application, improve the land by building a dwelling and cultivating crops, and reside on the property for five continuous years before receiving the final title."
+            ],
+            impact: "The long-term impact of the Homestead Act is immeasurable. It facilitated the rapid agricultural development of the American Midwest and West, establishing the United States as a global agricultural powerhouse. Culturally, it cemented the mythos of the frontier and the self-reliant pioneer in the American consciousness. Conversely, it severely disrupted the ecological balance of the plains, contributing to the conditions that led to the Dust Bowl in the 1930s, and codified the systemic dispossession of indigenous peoples, the legal ramifications of which continue to be litigated in federal courts today."
+        },
+        {
+            title: "The Cuban Missile Crisis: Geopolitical Brinkmanship in the Cold War",
+            summary: "The Cuban Missile Crisis of October 1962 represents the apotheosis of Cold War tension, a thirteen-day confrontation between the United States and the Soviet Union that brought the world closer to nuclear war than at any other point in history. The crisis was precipitated by the Soviet Union's clandestine installation of medium-range and intermediate-range ballistic missiles in Cuba, a strategic countermove to the United States' deployment of Jupiter missiles in Italy and Turkey and the failed Bay of Pigs invasion. American U-2 reconnaissance flights confirmed the presence of the missile sites, presenting President John F. Kennedy with a dire strategic dilemma. Rejecting immediate airstrikes, Kennedy opted for a naval 'quarantine' to prevent further Soviet shipments, a term chosen to avoid the act-of-war implications of a blockade. The standoff concluded when Premier Nikita Khrushchev agreed to dismantle the weapons in exchange for a public U.S. pledge not to invade Cuba and a secret agreement to remove U.S. missiles from Turkey.",
+            bullets: [
+                "<strong>Who:</strong> Key actors included U.S. President John F. Kennedy, Soviet Premier Nikita Khrushchev, and Cuban Prime Minister Fidel Castro.",
+                "<strong>What:</strong> A tense political and military standoff over the installation of nuclear-armed Soviet missiles on Cuba.",
+                "<strong>Where:</strong> The island of Cuba, the surrounding Caribbean Sea, and diplomatic channels in Washington D.C. and Moscow.",
+                "<strong>When:</strong> The crisis technically spanned from October 16 to October 28, 1962.",
+                "<strong>Why:</strong> The USSR sought to deter U.S. aggression against Cuba and correct the strategic imbalance caused by U.S. missiles in Europe.",
+                "<strong>How:</strong> Resolution was achieved through a combination of military signaling via a naval blockade and intense back-channel diplomatic negotiations."
+            ],
+            impact: "The immediate aftermath of the crisis saw a thawing of Cold War tensions known as détente. Recognizing the dangers of miscommunication, the two superpowers established the Moscow–Washington hotline to ensure direct contact between leaders during future crises. Furthermore, the event galvanized global support for nuclear non-proliferation, leading directly to the signing of the Limited Nuclear Test Ban Treaty in 1963. In military strategy, the doctrine of Mutually Assured Destruction (MAD) became the governing principle of international relations for the remainder of the Cold War."
+        },
+        {
+            title: "The Panic of 1907: Liquidity Crises and the Genesis of Central Banking",
+            summary: "The Panic of 1907, also known as the Knickerbocker Crisis, was a severe financial contraction that occurred in the United States over a three-week period starting in mid-October 1907. The crisis was triggered by a failed attempt by speculators F. Augustus Heinze and Charles W. Morse to corner the market on stock of the United Copper Company. When the scheme collapsed, banks that had lent money to the conspiring scheme suffered runs that eventually spread to affiliated trust companies, most notably the Knickerbocker Trust Company. With the New York Stock Exchange falling nearly 50% from its peak, and without a central bank to inject liquidity into the system, the U.S. economy faced total collapse. The situation was only stabilized through the intervention of financier J.P. Morgan, who pledged large sums of his own money and convinced other New York bankers to do the same to shore up the banking system.",
+            bullets: [
+                "<strong>Who:</strong> Financier J.P. Morgan, F. Augustus Heinze, and the Knickerbocker Trust Company.",
+                "<strong>What:</strong> A financial panic characterized by numerous bank runs and a liquidity crunch.",
+                "<strong>Where:</strong> Centered in New York City, the effects rippled rapidly throughout the national economy.",
+                "<strong>When:</strong> October and November 1907.",
+                "<strong>Why:</strong> The lack of a central bank left the system vulnerable to shocks caused by unregulated speculation and the interconnected nature of trust companies.",
+                "<strong>How:</strong> Stabilization was achieved by a coalition of bankers organized by J.P. Morgan, who acted as a de facto lender of last resort."
+            ],
+            impact: "The Panic of 1907 highlighted the critical inability of the private banking sector to manage the national money supply during periods of high stress. It eroded political resistance to central banking and led directly to the passage of the Aldrich–Vreeland Act of 1908, which established the National Monetary Commission. This commission's recommendations ultimately resulted in the enactment of the Federal Reserve Act of 1913, creating the Federal Reserve System to provide elasticity to the currency and serve as a lender of last resort to prevent future liquidity crises."
+        }
+    ];
+
+    const ENVIRONMENTS = {
+        retro: { id: 'retro', bg: 0x0a001a, fog: 0x0a001a, fogDens: 0.015, ambient: 0x440044, dirLight: 0x00ffff, pointLight: 0xff00ff, gridColor: 0x00ffff, groundColor: 0x050010, crystalPalette: [0xff0000], crystalEmissive: 1.5, isGlass: false, isWork: false },
+        day: { id: 'day', bg: 0x88ccff, fog: 0x88ccff, fogDens: 0.012, ambient: 0xaaaaaa, dirLight: 0xffffee, pointLight: 0x444444, gridColor: 0x002244, groundColor: 0xeeeeee, crystalPalette: [0xff0000], crystalEmissive: 0.5, isGlass: false, isWork: false },
+        cyber: { id: 'cyber', bg: 0x000500, fog: 0x000500, fogDens: 0.02, ambient: 0x002200, dirLight: 0x00ff00, pointLight: 0xccff00, gridColor: 0x00ff00, groundColor: 0x001100, crystalPalette: [0xff00ff, 0x00ffff, 0x00ff00, 0xffff00], crystalEmissive: 3.0, isGlass: false, isWork: false },
+        glass: { id: 'glass', bg: 0xe0f7fa, fog: 0xe0f7fa, fogDens: 0.01, ambient: 0xffffff, dirLight: 0xffffff, pointLight: 0xff0000, gridColor: 0x111111, groundColor: 0xffffff, crystalPalette: [0xff0000], crystalEmissive: 2.0, isGlass: true, isWork: false },
+        work: { id: 'work', bg: 0xffffff, fog: 0xffffff, fogDens: 0.01, ambient: 0xffffff, dirLight: 0xffffff, pointLight: 0x000000, gridColor: 0x000000, groundColor: 0xffffff, crystalPalette: [0x000000], crystalEmissive: 0.0, isGlass: false, isWork: true }
+    };
+    let currentEnv = ENVIRONMENTS.retro;
+
+    let workOpacityLevel = 0.2;
+    let ballOpacityLevel = 0.2; // Separate ball opacity
+    let workColorIndex = 0;
+    const WORK_COLORS = [0x000000, 0x000080, 0x444444, 0x800000];
+    const COLOR_BARS = ["#000", "#000080", "#444", "#800000"];
+
+    let scene, camera, renderer;
+    let player, cubeCamera, playerMaterial;
+    let crackTexture;
+    let terrainGroup, terrainWireframe, terrainSolid;
+    let obstacles = [];
+    let activeExplosions = [];
+    let gameActive = false;
+    let score = 0;
+    let highScore = 0; 
+    let playerHealth = 100;
+    let boostEnergy = 100;
+    let boostFactor = 1.0;
+    let time = 0;
+    let currentSpeed = CONFIG.baseSpeed;
+    let currentHeightMap = null; 
+    let warningShown = false;
+    let panicMode = false; 
+    let isPaused = false; 
+    let isTyping = false; 
+    let dirLightObj, pointLightObj, ambientLightObj;
+
+    const keys = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false, KeyW: false, KeyS: false, KeyA: false, KeyD: false, Space: false };
+    const playerPhysics = { x: 0, y: 15, vx: 0, vy: 0, friction: 0.90, acceleration: 0.15 };
+
+    const canvasSource = document.getElementById('debug-canvas');
+    const ctxSource = canvasSource.getContext('2d');
+    const crackCanvas = document.getElementById('crack-canvas');
+    const crackCtx = crackCanvas.getContext('2d');
+    
+    function generatePlasmaImage(w, h) {
+        const imageData = ctxSource.createImageData(w, h);
+        const data = imageData.data;
+        function noise(x, y) { return Math.sin(x * 0.04) * Math.cos(y * 0.04) * 30 + Math.sin(x * 0.1) * Math.cos(y * 0.1) * 15 + (Math.random() - 0.5) * 9; }
+        for (let x = 0; x < w; x++) {
+            let nx = (x / w) * 2 - 1; 
+            let baseShape = 0;
+            if (Math.abs(nx) > 0.15) baseShape = Math.pow((Math.abs(nx) - 0.15) * 2.5, 2.5) * 255;
+            for (let y = 0; y < h; y++) {
+                let index = (y * w + x) * 4;
+                let n = noise(x + time*10, y);
+                let rawHeight = baseShape + n;
+                const stepSize = 25; 
+                let terracedHeight = rawHeight > 20 ? Math.floor(rawHeight / stepSize) * stepSize : 0; 
+                let val = Math.max(0, Math.min(255, terracedHeight));
+                data[index] = val; data[index+1] = val; data[index+2] = val; data[index+3] = 255;   
+            }
+        }
+        ctxSource.putImageData(imageData, 0, 0);
+        return ctxSource.getImageData(0, 0, w, h);
+    }
+
+    function toggleSection(label) { label.parentElement.classList.toggle('collapsed'); }
+
+    function initCrackTexture() {
+        crackCtx.clearRect(0,0,512,512);
+        crackTexture = new THREE.CanvasTexture(crackCanvas);
+    }
+
+    function addDamageVisual() {
+        crackCtx.strokeStyle = "rgba(0,0,0,0.8)"; crackCtx.lineWidth = 2; crackCtx.beginPath();
+        let startX = Math.random() * 512; let startY = Math.random() * 512; crackCtx.moveTo(startX, startY);
+        for(let i=0; i<5; i++) { startX += (Math.random() - 0.5) * 100; startY += (Math.random() - 0.5) * 100; crackCtx.lineTo(startX, startY); }
+        crackCtx.stroke();
+        if(crackTexture) crackTexture.needsUpdate = true;
+        if(!currentEnv.isWork) {
+            const flash = document.getElementById('damage-flash');
+            flash.style.opacity = 0.6; setTimeout(() => { flash.style.opacity = 0; }, 100);
+        }
+    }
+
+    function updateUI() {
+        if (currentEnv.isWork) {
+            document.getElementById('status-word-count').innerText = `${Math.floor(score)} words`;
+        } else {
+            const hBar = document.getElementById('health-bar');
+            document.getElementById('health-text').innerText = `SHIELD: ${Math.floor(playerHealth)}%`;
+            hBar.style.width = `${playerHealth}%`;
+            if(playerHealth > 60) hBar.style.background = '#0f0'; else if(playerHealth > 30) hBar.style.background = '#ff0'; else hBar.style.background = '#f00';
+
+            const bBar = document.getElementById('boost-bar');
+            document.getElementById('boost-text').innerText = `NITRO: ${Math.floor(boostEnergy)}%`;
+            bBar.style.width = `${boostEnergy}%`;
+            if (boostEnergy < 20) bBar.style.background = '#f00'; else bBar.style.background = '#0ff';
+        }
+    }
+
+    function takeDamage(amount) {
+        playerHealth -= amount; addDamageVisual(); updateUI();
+        if (playerHealth <= 0) endGame("SHIELD FAILURE");
+    }
+
+    function exitWorkMode() { setEnvironment('retro', null); }
+
+    function generateReport() {
+        const topic = REPORT_TOPICS[Math.floor(Math.random() * REPORT_TOPICS.length)];
+        let bulletHtml = `<ul class="doc-list">`;
+        topic.bullets.forEach(b => { bulletHtml += `<li class="doc-li">${b}</li>`; });
+        bulletHtml += `</ul>`;
+
+        const html = `
+            <h2 class="doc-title">${topic.title}</h2>
+            <h3 class="doc-h1">1. Historical Summary</h3>
+            <p class="doc-p">${topic.summary}</p>
+            <h3 class="doc-h1">2. Key Details</h3>
+            ${bulletHtml}
+            <h3 class="doc-h1">3. Modern Impact</h3>
+            <p class="doc-p">${topic.impact}</p>
+            <br><br><br><br><br><br><br>
+            <p style="text-align:center; color:#ccc; font-size:9pt;">[ Figure 1.1: Timeline Analysis ]</p>
+        `;
+        document.getElementById('doc-content').innerHTML = html;
+    }
+
+    function formatDoc(cmd, value) {
+        document.execCommand(cmd, false, value);
+        document.getElementById('doc-content').focus();
+    }
+
+    function handleWorkClick(e) {
+        if (e.target.id === 'doc-content' || e.target.closest('#doc-content') || e.target.id === 'paper-sheet') {
+            isTyping = true;
+            isPaused = true;
+            document.getElementById('status-paused').style.display = 'block';
+            document.getElementById('canvas-container').style.opacity = 0;
+            document.getElementById('paper-sheet').style.backgroundColor = '#ffffff'; 
+            document.getElementById('doc-content').focus();
+        } else {
+            if (!e.target.closest('#word-ribbon-container') && !e.target.closest('#status-bar') && !e.target.closest('#work-game-over') && !e.target.closest('#help-modal')) {
+                isTyping = false;
+                isPaused = false;
+                document.getElementById('status-paused').style.display = 'none';
+                document.getElementById('doc-content').blur();
+                
+                if(currentEnv.isWork) {
+                    document.getElementById('canvas-container').style.opacity = 1;
+                    document.getElementById('paper-sheet').style.backgroundColor = 'rgba(255, 255, 255, 0.02)';
+                }
+            }
+        }
+    }
+
+    function togglePause() {
+        isPaused = !isPaused;
+        if (currentEnv.isWork) {
+            document.getElementById('status-paused').style.display = isPaused ? 'block' : 'none';
+        }
+    }
+
+    function updateVisibilityFromDropdown(val) {
+        workOpacityLevel = parseFloat(val);
+        applyWorkVisuals();
+        document.getElementById('canvas-container').focus(); 
+    }
+
+    function updateBallOpacityFromDropdown(val) {
+        ballOpacityLevel = parseFloat(val);
+        applyWorkVisuals();
+        document.getElementById('canvas-container').focus();
+    }
+
+    function cycleColor() {
+        workColorIndex = (workColorIndex + 1) % WORK_COLORS.length;
+        document.getElementById('color-bar-indicator').style.background = COLOR_BARS[workColorIndex];
+        applyWorkVisuals();
+    }
+
+    function applyWorkVisuals() {
+        if (!currentEnv.isWork) return;
+        const color = WORK_COLORS[workColorIndex];
+        
+        if (terrainWireframe) {
+            terrainWireframe.material.opacity = workOpacityLevel;
+            terrainWireframe.material.color.setHex(color);
+        }
+        if (player) {
+            player.material.opacity = ballOpacityLevel;
+            player.material.color.setHex(color);
+        }
+        obstacles.forEach(ob => {
+            ob.material.opacity = workOpacityLevel;
+            ob.material.color.setHex(color);
+            if(ob.material.emissive) ob.material.emissive.setHex(color);
+        });
+        activeExplosions.forEach(exp => {
+            exp.mesh.material.color.setHex(color);
+            exp.mesh.material.opacity = workOpacityLevel * 0.5;
+        });
+    }
+    
+    function showHelp() {
+        document.getElementById('help-modal').style.display = 'block';
+    }
+    
+    function closeHelp() {
+        document.getElementById('help-modal').style.display = 'none';
+    }
+
+    // --- 3D Engine ---
+    function init() {
+        scene = new THREE.Scene();
+        camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 6, 12); 
+
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); 
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        ambientLightObj = new THREE.AmbientLight(0x000000); scene.add(ambientLightObj);
+        dirLightObj = new THREE.DirectionalLight(0xffffff, 1); dirLightObj.position.set(20, 50, 20); scene.add(dirLightObj);
+        pointLightObj = new THREE.PointLight(0xffffff, 1, 100); pointLightObj.position.set(0, 10, -20); scene.add(pointLightObj);
+
+        initCrackTexture();
+        const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(256, { format: THREE.RGBFormat, generateMipmaps: true, minFilter: THREE.LinearMipmapLinearFilter });
+        cubeCamera = new THREE.CubeCamera(0.1, 100, cubeRenderTarget);
+        scene.add(cubeCamera);
+
+        playerMaterial = new THREE.MeshStandardMaterial({
+            color: 0xffffff, metalness: 1.0, roughness: 0.05,
+            envMap: cubeRenderTarget.texture, roughnessMap: crackTexture, bumpMap: crackTexture, bumpScale: 0.1
+        });
+
+        player = new THREE.Mesh(new THREE.SphereGeometry(1.2, 32, 32), playerMaterial);
+        scene.add(player);
+
+        highScore = localStorage.getItem('chromeCanyonHighScore') || 0;
+        document.getElementById('high-score').innerText = `HIGH SCORE: ${highScore.toString().padStart(6, '0')}`;
+
+        applyEnvironmentParams(); 
+        generateWorld();
+        setupObstacles();
+
+        window.addEventListener('resize', onWindowResize);
+        document.addEventListener('keydown', (e) => { 
+            // Quick Switch
+            if (!currentEnv.isWork && e.key.toLowerCase() === 'h') {
+                setEnvironment('work', null);
+                return;
+            }
+
+            if (currentEnv.isWork && /^[0-9]$/.test(e.key)) {
+                panicMode = true;
+                document.getElementById('canvas-container').style.opacity = 0; 
+                return;
+            }
+            if (isTyping) return; 
+
+            if (!gameActive && document.getElementById('game-over').style.display === 'block') { resetGame(); return; }
+            if (!gameActive && document.getElementById('work-game-over').style.display === 'flex') { resetGame(); return; }
+
+            if (e.code === "KeyP") togglePause();
+            if(keys.hasOwnProperty(e.code)) keys[e.code] = true; 
+            if(e.code === "Space") keys.Space = true;
+        });
+        document.addEventListener('keyup', (e) => { 
+            if(keys.hasOwnProperty(e.code)) keys[e.code] = false; 
+            if(e.code === "Space") keys.Space = false;
+        });
+        
+        document.getElementById('loading').style.display = 'none';
+        gameActive = true;
+        animate();
+    }
+
+    function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    function setEnvironment(type, btn) {
+        if(btn) {
+            const group = btn.parentElement;
+            group.querySelectorAll('.setting-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+        currentEnv = ENVIRONMENTS[type];
+        
+        panicMode = false; isPaused = false; isTyping = false;
+        document.getElementById('canvas-container').style.opacity = 1;
+        document.getElementById('status-paused').style.display = 'none';
+
+        if(currentEnv.isWork) {
+            generateReport(); 
+            workOpacityLevel = 0.2;
+            ballOpacityLevel = 0.2;
+            document.getElementById('visibility-select').value = "0.2";
+            document.getElementById('ball-visibility-select').value = "0.2";
+        }
+
+        applyEnvironmentParams();
+        setupObstacles();
+    }
+
+    function applyEnvironmentParams() {
+        if(!scene) return;
+        scene.background = new THREE.Color(currentEnv.bg);
+        scene.fog = new THREE.FogExp2(currentEnv.fog, currentEnv.fogDens);
+        ambientLightObj.color.setHex(currentEnv.ambient);
+        dirLightObj.color.setHex(currentEnv.dirLight);
+        pointLightObj.color.setHex(currentEnv.pointLight);
+        
+        const gameUI = document.getElementById('ui');
+        const settings = document.getElementById('settings-panel');
+        const wordUI = document.getElementById('word-ui');
+
+        if (currentEnv.isWork) {
+            gameUI.style.display = 'none';
+            settings.style.display = 'none';
+            wordUI.style.display = 'block';
+            scene.background = new THREE.Color(0xffffff); 
+        } else {
+            gameUI.style.display = 'block';
+            settings.style.display = 'block';
+            wordUI.style.display = 'none';
+        }
+
+        if (terrainWireframe && terrainSolid) {
+            if (currentEnv.isWork) {
+                terrainSolid.visible = false; 
+                terrainWireframe.material.transparent = true;
+                player.material = new THREE.MeshBasicMaterial({ wireframe: true, transparent: true });
+                applyWorkVisuals(); 
+            } else {
+                terrainSolid.visible = true;
+                terrainWireframe.material.color.setHex(currentEnv.gridColor);
+                terrainWireframe.material.transparent = true;
+                player.material = playerMaterial; 
+                player.material.opacity = 1.0;
+                
+                if (currentEnv.isGlass) {
+                    terrainSolid.material.color.setHex(currentEnv.groundColor); 
+                    terrainSolid.material.emissive.setHex(0x111111); 
+                    terrainSolid.material.specular.setHex(0xffffff);
+                    terrainSolid.material.shininess = 100;
+                    terrainSolid.material.opacity = 0.3; 
+                    terrainSolid.material.transparent = true;
+                    terrainWireframe.material.opacity = 0.1;
+                } else {
+                    terrainSolid.material.color.setHex(currentEnv.groundColor);
+                    terrainSolid.material.specular.setHex(0x111111);
+                    terrainSolid.material.shininess = 0;
+                    terrainSolid.material.opacity = 1.0;
+                    terrainSolid.material.transparent = false;
+                    terrainWireframe.material.opacity = 0.5;
+                }
+            }
+        }
+    }
+
+    function setLandscape(type, btn) {
+        const group = btn.parentElement;
+        group.querySelectorAll('.setting-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        if(type === 'smooth') { CONFIG.noiseScale = 5; CONFIG.terrainSegmentsW = 100; }
+        if(type === 'jagged') { CONFIG.noiseScale = 30; CONFIG.terrainSegmentsW = 60; }
+    }
+
+    function generateWorld() {
+        currentHeightMap = generatePlasmaImage(256, 256);
+        const geometry = new THREE.PlaneGeometry(CONFIG.terrainWidth, CONFIG.terrainDepth, CONFIG.terrainSegmentsW, CONFIG.terrainSegmentsD);
+        const vertices = geometry.attributes.position.array;
+        for (let i = 0; i < vertices.length; i += 3) {
+            const index = i / 3;
+            const widthSegments = CONFIG.terrainSegmentsW + 1;
+            const col = index % widthSegments;
+            const row = Math.floor(index / widthSegments);
+            const imgX = Math.floor((col / CONFIG.terrainSegmentsW) * 255);
+            const imgY = Math.floor((row / CONFIG.terrainSegmentsD) * 255);
+            const pixelIndex = (imgY * 256 + imgX) * 4;
+            const heightVal = currentHeightMap.data[pixelIndex];
+            vertices[i + 2] = (heightVal / 255) * CONFIG.maxHeight; 
+        }
+        geometry.computeVertexNormals();
+
+        if (terrainGroup) scene.remove(terrainGroup);
+        terrainGroup = new THREE.Group();
+
+        const matSolid = new THREE.MeshPhongMaterial({ color: currentEnv.groundColor, shininess: 0, flatShading: true });
+        terrainSolid = new THREE.Mesh(geometry, matSolid);
+        terrainSolid.rotation.x = -Math.PI / 2;
+        terrainGroup.add(terrainSolid);
+
+        const matWire = new THREE.MeshBasicMaterial({ color: currentEnv.gridColor, wireframe: true, transparent: true, opacity: 0.5 });
+        terrainWireframe = new THREE.Mesh(geometry, matWire);
+        terrainWireframe.rotation.x = -Math.PI / 2;
+        terrainWireframe.position.y = 0.1; 
+        terrainGroup.add(terrainWireframe);
+
+        terrainGroup.position.z = -CONFIG.terrainDepth / 2 + 20;
+        scene.add(terrainGroup);
+        applyEnvironmentParams();
+    }
+
+    function setupObstacles() {
+        obstacles.forEach(o => scene.remove(o));
+        obstacles = [];
+        activeExplosions.forEach(e => scene.remove(e.mesh));
+        activeExplosions = [];
+        for(let i=0; i<30; i++) { spawnRandomObstacle(-200 - (Math.random() * 300)); }
+    }
+
+    function spawnRandomObstacle(zPos) {
+        const rand = Math.random();
+        if (score > CONFIG.splitterStart) {
+            if (rand > 0.8) spawnSplitter(zPos);
+            else if (rand > 0.5) spawnMine(zPos);
+            else spawnCrystal(zPos);
+        } else if (score > CONFIG.mineStart) {
+            if (rand > 0.6) spawnMine(zPos);
+            else spawnCrystal(zPos);
+        } else {
+            spawnCrystal(zPos);
+        }
+    }
+
+    function spawnCrystal(zPos) {
+        const geometry = new THREE.OctahedronGeometry(2, 0); 
+        
+        let material;
+        if (currentEnv.isWork) {
+            material = new THREE.MeshBasicMaterial({ 
+                color: WORK_COLORS[workColorIndex], 
+                wireframe: true, 
+                transparent: true, 
+                opacity: workOpacityLevel
+            });
+        } else {
+            const palette = currentEnv.crystalPalette;
+            const color = palette[Math.floor(Math.random() * palette.length)];
+            material = new THREE.MeshStandardMaterial({ 
+                color: color, emissive: color, emissiveIntensity: currentEnv.crystalEmissive,
+                metalness: 1.0, roughness: 0.0, transparent: currentEnv.isGlass, opacity: currentEnv.isGlass ? 0.6 : 1.0, side: THREE.DoubleSide
+            });
+        }
+
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.position.set((Math.random() - 0.5) * 80, 5 + Math.random() * 30, zPos);
+        mesh.userData = { type: 'crystal', rotX: Math.random()*0.1, rotY: Math.random()*0.1, vx: (Math.random()-0.5)*0.3, vy: (Math.random()-0.5)*0.15 };
+        scene.add(mesh);
+        obstacles.push(mesh);
+    }
+
+    function spawnMine(zPos) {
+        const geometry = new THREE.IcosahedronGeometry(2.5, 1);
+        let material;
+        if (currentEnv.isWork) {
+            material = new THREE.MeshBasicMaterial({ color: WORK_COLORS[workColorIndex], wireframe: true, transparent: true, opacity: workOpacityLevel });
+        } else {
+            material = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0x550000, emissiveIntensity: 1.0, metalness: 0.8, roughness: 0.4 });
+        }
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.position.set((Math.random() - 0.5) * 70, 5 + Math.random() * 25, zPos);
+        mesh.userData = { type: 'mine', rotX: Math.random()*0.2, rotY: Math.random()*0.2, vx: (Math.random()-0.5)*0.1, vy: (Math.random()-0.5)*0.1, triggerZ: -60 + Math.random() * 20 };
+        scene.add(mesh);
+        obstacles.push(mesh);
+    }
+
+    function spawnSplitter(zPos) {
+        const geometry = new THREE.OctahedronGeometry(4, 0);
+        let material;
+        if (currentEnv.isWork) {
+            material = new THREE.MeshBasicMaterial({ color: WORK_COLORS[workColorIndex], wireframe: true, transparent: true, opacity: workOpacityLevel });
+        } else {
+            material = new THREE.MeshStandardMaterial({ color: 0xaa00ff, emissive: 0x4400aa, emissiveIntensity: 1.5, metalness: 0.9, roughness: 0.1 });
+        }
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.position.set((Math.random() - 0.5) * 60, 10 + Math.random() * 20, zPos);
+        mesh.userData = { type: 'splitter', rotX: 0.05, rotY: 0.05, vx: (Math.random()-0.5)*0.1, vy: 0, splitZ: -120 };
+        scene.add(mesh);
+        obstacles.push(mesh);
+    }
+
+    function splitObstacle(parent) {
+        for(let i=0; i<8; i++) {
+            const geo = new THREE.TetrahedronGeometry(0.8, 0);
+            let mat;
+            if(currentEnv.isWork) mat = new THREE.MeshBasicMaterial({ color: WORK_COLORS[workColorIndex], wireframe: true, transparent: true, opacity: workOpacityLevel });
+            else mat = new THREE.MeshStandardMaterial({ color: 0xff00ff, emissive: 0xff00ff, emissiveIntensity: 2, metalness: 0.5 });
+            
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.copy(parent.position);
+            mesh.userData = { type: 'micro', rotX: Math.random(), rotY: Math.random(), vx: (Math.random() - 0.5) * 2.0, vy: (Math.random() - 0.5) * 2.0 };
+            scene.add(mesh);
+            obstacles.push(mesh);
+        }
+        if(currentEnv.isWork) applyWorkVisuals();
+    }
+
+    function ensurePopulation() {
+        let targetCount = 30;
+        if (score > 30000) targetCount = 60; else if (score > 20000) targetCount = 45;
+        const currentMain = obstacles.filter(o => o.userData.type !== 'micro').length;
+        if (currentMain < targetCount) spawnRandomObstacle(-300 - Math.random() * 200);
+        if(currentEnv.isWork) applyWorkVisuals(); 
+    }
+
+    function createExplosion(position) {
+        const isMega = score > CONFIG.megaMineStart;
+        const radius = isMega ? 60 : CONFIG.blastRadius;
+        const geometry = new THREE.SphereGeometry(1, 32, 32);
+        let material;
+        if (currentEnv.isWork) material = new THREE.MeshBasicMaterial({ color: WORK_COLORS[workColorIndex], wireframe: true, transparent: true, opacity: workOpacityLevel * 0.5 });
+        else material = new THREE.MeshBasicMaterial({ color: isMega ? 0xffaa00 : 0xff0000, transparent: true, opacity: 0.8, wireframe: true });
+        
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.position.copy(position);
+        scene.add(mesh);
+        activeExplosions.push({ mesh: mesh, scale: 1.0, maxScale: radius, opacityDecay: isMega ? 0.02 : 0.05 });
+        if(currentEnv.isWork) applyWorkVisuals();
+    }
+
+    function resetGame() {
+        score = 0; currentSpeed = CONFIG.baseSpeed; playerHealth = 100; boostEnergy = 100; boostFactor = 1.0;
+        updateUI(); initCrackTexture();
+        playerPhysics.x = 0; playerPhysics.y = 10; playerPhysics.vx = 0; playerPhysics.vy = 0;
+        mineWarningShown = false;
+        document.getElementById('warning-overlay').style.display = 'none';
+        terrainGroup.position.z = -CONFIG.terrainDepth / 2 + 20;
+        setupObstacles(); generateWorld(); 
+        document.getElementById('game-over').style.display = 'none';
+        document.getElementById('work-game-over').style.display = 'none';
+        document.getElementById('new-record-msg').style.display = 'none';
+        gameActive = true;
+        isPaused = false;
+        isTyping = false;
+        document.getElementById('status-paused').style.display = 'none';
+        document.getElementById('canvas-container').style.opacity = 1;
+    }
+
+    function getTerrainHeightAt(worldX, worldZ) {
+        const localZ = worldZ - terrainGroup.position.z; 
+        const localX = worldX; 
+        let mapX = (localX + CONFIG.terrainWidth/2) / CONFIG.terrainWidth;
+        let mapY = (localZ + CONFIG.terrainDepth/2) / CONFIG.terrainDepth;
+        if(mapX < 0 || mapX > 1 || mapY < 0 || mapY > 1) return 0;
+        const imgX = Math.floor(mapX * 255);
+        const imgY = Math.floor(mapY * 255);
+        if (!currentHeightMap) return 0;
+        const index = (imgY * 256 + imgX) * 4;
+        return (currentHeightMap.data[index] / 255) * CONFIG.maxHeight;
+    }
+
+    function updatePlayerPhysics() {
+        if (keys.ArrowLeft || keys.KeyA) playerPhysics.vx -= playerPhysics.acceleration;
+        if (keys.ArrowRight || keys.KeyD) playerPhysics.vx += playerPhysics.acceleration;
+        if (keys.ArrowUp || keys.KeyW) playerPhysics.vy += playerPhysics.acceleration;
+        if (keys.ArrowDown || keys.KeyS) playerPhysics.vy -= playerPhysics.acceleration;
+        playerPhysics.vx *= playerPhysics.friction; playerPhysics.vy *= playerPhysics.friction;
+        playerPhysics.x += playerPhysics.vx; playerPhysics.y += playerPhysics.vy;
+        if (playerPhysics.y < 1.2) { playerPhysics.y = 1.2; playerPhysics.vy = 0; }
+        if (playerPhysics.y > 70) { playerPhysics.y = 70; playerPhysics.vy = 0; }
+        player.position.x = playerPhysics.x; player.position.y = playerPhysics.y;
+        player.rotation.z = -playerPhysics.vx * CONFIG.maxLean; player.rotation.x -= currentSpeed * 0.2;
+    }
+
+    function endGame(reason) {
+        gameActive = false;
+        
+        if (currentEnv.isWork) {
+            document.getElementById('sc-reason').innerText = reason.replace(/ /g, "_");
+            document.getElementById('work-game-over').style.display = 'flex';
+        } else {
+            if (score > highScore) {
+                highScore = score; localStorage.setItem('chromeCanyonHighScore', highScore);
+                document.getElementById('high-score').innerText = `HIGH SCORE: ${highScore.toString().padStart(6, '0')}`;
+                document.getElementById('new-record-msg').style.display = 'block';
+            } else { document.getElementById('new-record-msg').style.display = 'none'; }
+            document.getElementById('crash-reason').innerText = reason;
+            document.getElementById('final-score').innerText = `SCORE: ${score}`;
+            document.getElementById('game-over').style.display = 'block';
+        }
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+        
+        if (panicMode || isPaused) return;
+        if (!gameActive) { if(player) player.rotation.y += 0.01; return; }
+
+        time += 0.05;
+        
+        if (keys.Space && boostEnergy > 0) {
+            boostFactor += CONFIG.boostAcceleration; boostEnergy -= CONFIG.boostDrain;
+            camera.position.x += (Math.random() - 0.5) * 0.2; camera.position.y += (Math.random() - 0.5) * 0.2;
+        } else {
+            boostFactor -= CONFIG.boostDeceleration; boostEnergy += CONFIG.boostRecharge;
+        }
+        boostFactor = Math.max(1.0, Math.min(boostFactor, CONFIG.maxBoostFactor));
+        boostEnergy = Math.max(0, Math.min(boostEnergy, 100));
+        
+        updateUI();
+        
+        const actualSpeed = currentSpeed * boostFactor;
+        if (currentSpeed < CONFIG.maxSpeed) currentSpeed += CONFIG.speedIncrease;
+
+        updatePlayerPhysics();
+
+        if (!currentEnv.isWork && ((score > CONFIG.mineStart && score < CONFIG.mineStart + 500) || (score > CONFIG.splitterStart && score < CONFIG.splitterStart + 500) || (score > CONFIG.megaMineStart && score < CONFIG.megaMineStart + 500))) {
+            if(!warningShown) {
+                let text = "!!! MINEFIELD !!!";
+                if(score > CONFIG.megaMineStart) text = "!!! MEGA MINES !!!"; else if(score > CONFIG.splitterStart) text = "!!! FRAGMENTATION SHARDS !!!";
+                document.getElementById('warning-overlay').innerText = text;
+                document.getElementById('warning-overlay').style.display = 'block';
+                warningShown = true;
+            }
+        } else {
+            document.getElementById('warning-overlay').style.display = 'none';
+            warningShown = false;
+        }
+
+        if (currentEnv.isGlass && !currentEnv.isWork) {
+            const pulse = (Math.sin(time * 5) + 1) * 2; 
+            obstacles.forEach(ob => { if (ob.userData.type === 'crystal') ob.material.emissiveIntensity = pulse; });
+        }
+
+        terrainGroup.position.z += actualSpeed;
+        score += Math.round(actualSpeed * 10);
+        if(!currentEnv.isWork) document.getElementById('score').innerText = `SCORE: ${score.toString().padStart(6, '0')}`;
+        if (terrainGroup.position.z > CONFIG.terrainDepth / 2) terrainGroup.position.z = -CONFIG.terrainDepth / 2;
+
+        ensurePopulation();
+
+        for (let i = obstacles.length - 1; i >= 0; i--) {
+            const ob = obstacles[i];
+            ob.position.z += actualSpeed;
+            ob.rotation.x += ob.userData.rotX; ob.rotation.y += ob.userData.rotY;
+            ob.position.x += ob.userData.vx; ob.position.y += ob.userData.vy;
+
+            if (ob.position.z < player.position.z - 20 && ob.position.z > player.position.z - 150) {
+                 ob.position.x += (player.position.x - ob.position.x) * CONFIG.homingStrength;
+                 ob.position.y += (player.position.y - ob.position.y) * CONFIG.homingStrength;
+            }
+
+            if (ob.userData.type === 'splitter' && ob.position.z > ob.userData.splitZ) {
+                splitObstacle(ob); scene.remove(ob); obstacles.splice(i, 1); continue;
+            }
+
+            if (ob.userData.type === 'mine') {
+                const dist = Math.abs(ob.position.z - player.position.z);
+                if(!currentEnv.isWork) ob.material.emissiveIntensity = (Math.sin(time * (300/(dist+10))) + 1) * 2;
+                if (ob.position.z > ob.userData.triggerZ) {
+                    createExplosion(ob.position); scene.remove(ob); obstacles.splice(i, 1); continue;
+                }
+            }
+
+            if (player.position.distanceTo(ob.position) < 3.0) {
+                if (ob.userData.type === 'micro') { takeDamage(30); scene.remove(ob); obstacles.splice(i, 1); }
+                else { endGame(ob.userData.type === 'mine' ? "MINE DETONATION" : "CRITICAL IMPACT"); return; }
+            }
+
+            if (ob.position.z > 20) { scene.remove(ob); obstacles.splice(i, 1); }
+        }
+
+        for (let i = activeExplosions.length - 1; i >= 0; i--) {
+            const exp = activeExplosions[i];
+            exp.scale += 2.0; exp.mesh.scale.setScalar(exp.scale);
+            exp.mesh.material.opacity -= exp.opacityDecay;
+            if (exp.scale < exp.maxScale && exp.mesh.position.distanceTo(player.position) < exp.scale && exp.mesh.material.opacity > 0.5) { endGame("CAUGHT IN BLAST"); return; }
+            if (exp.mesh.material.opacity <= 0) { scene.remove(exp.mesh); activeExplosions.splice(i, 1); }
+        }
+
+        const groundHeight = getTerrainHeightAt(player.position.x, player.position.z);
+        if (player.position.y < groundHeight + 1.2) { endGame("GRID IMPACT"); return; }
+
+        const targetCamX = player.position.x * 0.6;
+        const targetCamY = Math.max(8, player.position.y + 5);
+        camera.position.x += (targetCamX - camera.position.x) * 0.1;
+        camera.position.y += (targetCamY - camera.position.y) * 0.1;
+        const targetCamZ = 12 + (boostFactor * 1.5);
+        camera.position.z += (targetCamZ - camera.position.z) * 0.05;
+        camera.lookAt(player.position.x, player.position.y, player.position.z - 8);
+
+        if(!currentEnv.isWork) {
+            player.visible = false;
+            cubeCamera.position.copy(player.position);
+            cubeCamera.update(renderer, scene);
+            player.visible = true;
+        }
+
+        renderer.render(scene, camera);
+    }
+
+    init();
+
+</script>
+</body>
+</html>
